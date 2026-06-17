@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Bea & Felipe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',sans-serif;background:#0D47A1;min-height:100vh;display:flex;justify-content:center;}
+    .app{width:100%;max-width:480px;min-height:100vh;background:#1565C0;display:flex;flex-direction:column;position:relative;}
+
+    /* LOCK */
+    #lock{position:fixed;inset:0;background:linear-gradient(160deg,#0D47A1,#1565C0);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;padding:2rem;}
+    .lock-logo{margin-bottom:1.5rem;}
+    #lock h2{font-family:'Playfair Display',serif;font-style:italic;font-size:1.8rem;color:#fff;margin-bottom:.3rem;}
+    #lock p{font-size:.8rem;color:#90CAF9;margin-bottom:2rem;letter-spacing:0.1em;}
+    #lock input{background:rgba(255,255,255,.1);border:1px solid #42A5F5;border-radius:50px;padding:.85rem 1.5rem;font-size:1rem;text-align:center;letter-spacing:.2em;outline:none;width:220px;color:#fff;margin-bottom:1rem;}
+    #lock input::placeholder{color:#90CAF9;}
+    #lock button{background:linear-gradient(135deg,#42A5F5,#4DB6AC);color:#fff;border:none;border-radius:50px;padding:.85rem 2.5rem;font-size:.95rem;cursor:pointer;font-weight:500;}
+    #lock .err{font-size:.75rem;color:#EF9A9A;margin-top:.5rem;min-height:1em;}
+
+    /* SURPRESA ANIVERSARIO */
+    #surpresa{display:none;position:fixed;inset:0;background:linear-gradient(160deg,#0D47A1,#1565C0);z-index:998;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;}
+    #surpresa.show{display:flex;}
+    .surpresa-emoji{font-size:4rem;margin-bottom:1rem;animation:bounce 1s ease infinite;}
+    @keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+    .confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:997;}
+    .confetti span{position:absolute;font-size:1.5rem;animation:confettiFall linear infinite;}
+    @keyframes confettiFall{0%{transform:translateY(-40px) rotate(0deg);opacity:1;}100%{transform:translateY(110vh) rotate(360deg);opacity:0;}}
+    #surpresa h1{font-family:'Playfair Display',serif;font-style:italic;font-size:2rem;color:#fff;margin-bottom:1rem;}
+    #surpresa p{font-size:1rem;color:#90CAF9;line-height:1.8;max-width:320px;margin-bottom:2rem;}
+    #surpresa button{background:linear-gradient(135deg,#42A5F5,#4DB6AC);color:#fff;border:none;border-radius:50px;padding:.85rem 2rem;font-size:.9rem;cursor:pointer;}
+
+    /* HEADER */
+    header{background:#0D47A1;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1976D2;position:sticky;top:0;z-index:10;}
+    .logo{display:flex;align-items:center;gap:8px;}
+    .logo span{font-size:16px;font-weight:600;color:#fff;}
+    .header-right{display:flex;align-items:center;gap:10px;}
+    .cur-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;border:2px solid #42A5F5;background:#0D47A1;color:#90CAF9;cursor:pointer;}
+
+    /* RECADO DO DIA */
+    .recado-bar{background:#0D47A1;border-bottom:1px solid #1976D2;padding:10px 16px;display:flex;align-items:center;gap:10px;}
+    .recado-avatar{width:36px;height:36px;border-radius:50%;background:#1565C0;border:2px solid #42A5F5;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#90CAF9;flex-shrink:0;}
+    .recado-input{flex:1;background:rgba(255,255,255,.08);border:1px solid #1976D2;border-radius:50px;padding:.5rem 1rem;font-size:.82rem;color:#fff;outline:none;font-family:'Inter',sans-serif;}
+    .recado-input::placeholder{color:#4a7a9a;}
+    .recado-btn{background:linear-gradient(135deg,#42A5F5,#4DB6AC);border:none;border-radius:50px;padding:.5rem 1rem;color:#fff;font-size:.75rem;cursor:pointer;white-space:nowrap;}
+    .recado-display{background:#0D47A1;border-bottom:1px solid #1976D2;padding:8px 16px;display:none;}
+    .recado-display p{font-size:.82rem;color:#90CAF9;font-style:italic;}
+
+    /* STORIES */
+    .stories{padding:12px 16px;border-bottom:1px solid #1976D2;background:#0D47A1;display:flex;gap:14px;overflow-x:auto;}
+    .stories::-webkit-scrollbar{display:none;}
+    .story{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer;}
+    .story-ring{width:56px;height:56px;border-radius:50%;padding:2.5px;background:linear-gradient(135deg,#42A5F5,#4DB6AC);}
+    .story-inner{width:100%;height:100%;border-radius:50%;background:#0D47A1;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;}
+    .story-inner.f{color:#90CAF9;}
+    .story-inner.b{color:#4DB6AC;}
+    .story span{font-size:11px;color:#90CAF9;}
+
+    /* FEED */
+    .feed{flex:1;overflow-y:auto;padding-bottom:80px;}
+    .feed::-webkit-scrollbar{display:none;}
+    .loading-feed{text-align:center;padding:2rem;color:#90CAF9;font-style:italic;font-size:.9rem;}
+
+    /* CONTADOR */
+    .counter-card{margin:12px 16px;background:#0D47A1;border-radius:16px;padding:16px;border:1px solid #1976D2;}
+    .counter-title{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#90CAF9;margin-bottom:4px;}
+    .counter-event{font-family:'Playfair Display',serif;font-style:italic;font-size:1.1rem;color:#fff;margin-bottom:12px;}
+    .counter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+    .counter-block{background:#1565C0;border-radius:10px;padding:10px 4px;text-align:center;}
+    .counter-num{font-size:1.6rem;font-weight:600;color:#42A5F5;line-height:1;}
+    .counter-label{font-size:.6rem;text-transform:uppercase;color:#90CAF9;letter-spacing:.08em;margin-top:3px;}
+    .counter-form{margin-top:12px;display:flex;gap:6px;}
+    .counter-form input{flex:1;background:#1565C0;border:1px solid #1976D2;border-radius:50px;padding:.5rem .8rem;font-size:.78rem;color:#fff;outline:none;min-width:0;}
+    .counter-form button{background:linear-gradient(135deg,#42A5F5,#4DB6AC);border:none;border-radius:50px;padding:.5rem 1rem;color:#fff;font-size:.78rem;cursor:pointer;white-space:nowrap;}
+
+    /* POST */
+    .post{border-bottom:1px solid #1976D2;background:#1565C0;}
+    .post-header{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;}
+    .post-user{display:flex;align-items:center;gap:8px;}
+    .post-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;}
+    .post-avatar.f{background:#0D47A1;color:#90CAF9;border:2px solid #42A5F5;}
+    .post-avatar.b{background:#0D47A1;color:#4DB6AC;border:2px solid #4DB6AC;}
+    .post-name{font-size:13px;font-weight:600;color:#fff;}
+    .post-time{font-size:11px;color:#90CAF9;}
+    .post-img img{width:100%;max-height:400px;object-fit:cover;}
+    .post-text-card{margin:0 16px 4px;background:#0D47A1;border-left:3px solid #4DB6AC;border-radius:0 12px 12px 0;padding:14px;}
+    .post-text-card p{font-size:14px;color:#e8f4fd;line-height:1.6;font-style:italic;}
+    .post-actions{padding:10px 16px 12px;}
+    .actions-row{display:flex;align-items:center;gap:16px;margin-bottom:6px;}
+    .action-btn{display:flex;align-items:center;gap:4px;cursor:pointer;background:none;border:none;color:#90CAF9;font-size:13px;}
+    .del-post{margin-left:auto;background:none;border:none;color:#4a7a9a;font-size:11px;cursor:pointer;}
+    .del-post:hover{color:#EF9A9A;}
+    .post-caption{font-size:13px;color:#e8f4fd;line-height:1.5;}
+    .post-caption strong{color:#90CAF9;}
+
+    /* ABAS */
+    .tabs{display:flex;border-bottom:1px solid #1976D2;background:#0D47A1;position:sticky;top:57px;z-index:9;}
+    .tab{flex:1;padding:.75rem;text-align:center;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#90CAF9;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+    .tab.active{color:#42A5F5;border-bottom-color:#42A5F5;}
+
+    /* PÁGINAS */
+    .page{display:none;padding-bottom:80px;}
+    .page.active{display:block;}
+
+    /* LINHA DO TEMPO */
+    .timeline{padding:16px;}
+    .timeline-item{display:flex;gap:12px;margin-bottom:20px;position:relative;}
+    .timeline-item::before{content:'';position:absolute;left:19px;top:40px;bottom:-20px;width:2px;background:#1976D2;}
+    .timeline-item:last-child::before{display:none;}
+    .timeline-dot{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#42A5F5,#4DB6AC);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+    .timeline-content{flex:1;background:#0D47A1;border-radius:14px;padding:12px;border:1px solid #1976D2;}
+    .timeline-date{font-size:.68rem;color:#90CAF9;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+    .timeline-title{font-size:.95rem;font-weight:600;color:#fff;margin-bottom:4px;}
+    .timeline-desc{font-size:.82rem;color:#90CAF9;line-height:1.5;}
+
+    /* MAPA */
+    .map-section{padding:16px;}
+    .map-placeholder{background:#0D47A1;border-radius:16px;padding:20px;border:1px solid #1976D2;text-align:center;margin-bottom:12px;}
+    .city-list{display:flex;flex-wrap:wrap;gap:8px;}
+    .city-tag{background:#1565C0;border:1px solid #42A5F5;border-radius:50px;padding:.4rem 1rem;font-size:.78rem;color:#90CAF9;display:flex;align-items:center;gap:6px;}
+    .city-tag span{font-size:1rem;}
+
+    /* MURAL */
+    .mural{padding:16px;}
+    .mural-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+    .mural-item{background:#0D47A1;border-radius:14px;padding:12px;border:1px solid #1976D2;cursor:pointer;transition:transform .2s;}
+    .mural-item:hover{transform:translateY(-2px);}
+    .mural-item.done{opacity:.6;border-color:#4DB6AC;}
+    .mural-emoji{font-size:1.5rem;margin-bottom:6px;}
+    .mural-title{font-size:.82rem;font-weight:600;color:#fff;margin-bottom:3px;}
+    .mural-sub{font-size:.72rem;color:#90CAF9;line-height:1.4;}
+    .mural-check{font-size:.7rem;color:#4DB6AC;margin-top:6px;}
+    .add-mural-btn{width:100%;background:#0D47A1;border:1.5px dashed #42A5F5;border-radius:14px;padding:14px;color:#42A5F5;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+
+    /* BOTTOM NAV */
+    nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#0D47A1;border-top:1px solid #1976D2;padding:8px 8px;display:flex;justify-content:space-around;align-items:center;z-index:10;}
+    .nav-btn{background:none;border:none;cursor:pointer;padding:4px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;color:#90CAF9;font-size:9px;letter-spacing:.05em;text-transform:uppercase;}
+    .nav-btn.active{color:#42A5F5;}
+    .nav-btn svg{width:22px;height:22px;}
+    .nav-plus{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#42A5F5,#4DB6AC);display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;margin-top:-20px;box-shadow:0 4px 16px rgba(66,165,245,.4);}
+
+    /* MODAIS */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;align-items:flex-end;justify-content:center;max-width:480px;margin:0 auto;left:50%;transform:translateX(-50%);}
+    .modal-overlay.open{display:flex;}
+    .modal-box{background:#0D47A1;border-radius:24px 24px 0 0;padding:20px 16px 32px;width:100%;border-top:1px solid #1976D2;}
+    .modal-title{text-align:center;font-size:12px;color:#90CAF9;letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px;}
+    .modal-opt{display:flex;align-items:center;gap:14px;padding:14px 16px;background:#1565C0;border-radius:14px;cursor:pointer;margin-bottom:8px;border:1px solid #1976D2;}
+    .modal-icon{width:46px;height:46px;border-radius:50%;background:#0D47A1;display:flex;align-items:center;justify-content:center;font-size:22px;}
+    .modal-opt-title{font-size:14px;font-weight:600;color:#fff;}
+    .modal-opt-sub{font-size:11px;color:#90CAF9;}
+    .modal-cancel{width:100%;background:rgba(255,255,255,.05);border:1px solid #1976D2;border-radius:14px;padding:14px;color:#90CAF9;font-size:14px;cursor:pointer;margin-top:8px;}
+
+    /* WRITE MODAL */
+    .write-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:60;align-items:center;justify-content:center;max-width:480px;margin:0 auto;left:50%;transform:translateX(-50%);}
+    .write-modal.open{display:flex;}
+    .write-inner{background:#0D47A1;border-radius:20px;padding:20px;width:90%;border:1px solid #1976D2;max-height:90vh;overflow-y:auto;}
+    .write-inner h3{font-size:14px;color:#fff;margin-bottom:12px;text-align:center;}
+    .author-row{display:flex;gap:8px;margin-bottom:12px;}
+    .author-chip{flex:1;padding:.5rem;border-radius:50px;border:1.5px solid #1976D2;background:transparent;color:#90CAF9;font-size:.82rem;cursor:pointer;text-align:center;}
+    .author-chip.active{background:linear-gradient(135deg,#42A5F5,#4DB6AC);color:#fff;border-color:transparent;}
+    .write-inner textarea{width:100%;background:#1565C0;border:1px solid #1976D2;border-radius:12px;padding:.9rem;font-size:.93rem;color:#e8f4fd;resize:none;height:100px;font-family:'Inter',sans-serif;outline:none;}
+    .write-inner input[type=text]{width:100%;background:#1565C0;border:1px solid #1976D2;border-radius:12px;padding:.75rem 1rem;font-size:.9rem;color:#e8f4fd;font-family:'Inter',sans-serif;outline:none;margin-bottom:8px;}
+    .write-send{width:100%;margin-top:10px;background:linear-gradient(135deg,#42A5F5,#4DB6AC);color:#fff;border:none;border-radius:50px;padding:.8rem;font-size:.9rem;cursor:pointer;font-weight:500;}
+    .write-cancel{width:100%;margin-top:6px;background:transparent;border:1px solid #1976D2;border-radius:50px;padding:.7rem;font-size:.85rem;cursor:pointer;color:#90CAF9;}
+
+    #fileInput{display:none;}
+    .sec-title{font-family:'Playfair Display',serif;font-style:italic;font-size:1.2rem;color:#fff;padding:16px 16px 8px;}
+  </style>
+</head>
+<body>
+
+<!-- SURPRESA ANIVERSÁRIO -->
+<div id="surpresa">
+  <div class="confetti" id="confetti"></div>
+  <div class="surpresa-emoji" id="surpresaEmoji">🎂</div>
+  <h1 id="surpresaTitulo">Feliz Aniversário!</h1>
+  <p id="surpresaTexto">Hoje é um dia muito especial! Que esse dia seja tão incrível quanto você. Com todo amor 💙</p>
+  <button onclick="fecharSurpresa()">entrar no nosso cantinho 💙</button>
+</div>
+
+<!-- LOCK -->
+<div id="lock">
+  <div class="lock-logo">
+    <svg width="72" height="72" viewBox="0 0 100 100" fill="none">
+      <ellipse cx="50" cy="55" rx="6" ry="24" fill="#90CAF9"/>
+      <ellipse cx="50" cy="46" rx="4" ry="15" fill="#42A5F5"/>
+      <ellipse cx="28" cy="42" rx="24" ry="10" fill="#81D4FA" opacity="0.85" transform="rotate(-20 28 42)"/>
+      <ellipse cx="72" cy="42" rx="24" ry="10" fill="#81D4FA" opacity="0.85" transform="rotate(20 72 42)"/>
+      <ellipse cx="26" cy="57" rx="17" ry="7" fill="#4DB6AC" opacity="0.8" transform="rotate(-15 26 57)"/>
+      <ellipse cx="74" cy="57" rx="17" ry="7" fill="#4DB6AC" opacity="0.8" transform="rotate(15 74 57)"/>
+      <circle cx="50" cy="28" r="8" fill="#0D47A1"/>
+      <circle cx="47" cy="26" r="3.5" fill="#90CAF9" opacity="0.9"/>
+    </svg>
+  </div>
+  <h2>Bea & Felipe</h2>
+  <p>nosso cantinho secreto</p>
+  <input type="password" id="pw" placeholder="senha" autocomplete="off"/>
+  <button onclick="unlock()">entrar</button>
+  <p class="err" id="err"></p>
+</div>
+
+<div class="app" id="app" style="display:none;">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <svg width="26" height="26" viewBox="0 0 100 100" fill="none">
+        <ellipse cx="50" cy="55" rx="5" ry="20" fill="#90CAF9"/>
+        <ellipse cx="50" cy="46" rx="4" ry="14" fill="#42A5F5"/>
+        <ellipse cx="28" cy="42" rx="22" ry="9" fill="#81D4FA" opacity="0.85" transform="rotate(-20 28 42)"/>
+        <ellipse cx="72" cy="42" rx="22" ry="9" fill="#81D4FA" opacity="0.85" transform="rotate(20 72 42)"/>
+        <ellipse cx="26" cy="55" rx="15" ry="6" fill="#4DB6AC" opacity="0.8" transform="rotate(-15 26 55)"/>
+        <ellipse cx="74" cy="55" rx="15" ry="6" fill="#4DB6AC" opacity="0.8" transform="rotate(15 74 55)"/>
+        <circle cx="50" cy="28" r="7" fill="#0D47A1"/>
+        <circle cx="47" cy="26" r="3" fill="#90CAF9" opacity="0.9"/>
+      </svg>
+      <span>bea & felipe</span>
+    </div>
+    <div class="header-right">
+      <div class="cur-avatar" id="curAvatar" onclick="trocarPerfil()">F</div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="showPage('feed',this)">Feed</div>
+    <div class="tab" onclick="showPage('timeline',this)">Memórias</div>
+    <div class="tab" onclick="showPage('mapa',this)">Mapa</div>
+    <div class="tab" onclick="showPage('mural',this)">Sonhos</div>
+  </div>
+
+  <!-- PAGE: FEED -->
+  <div class="page active" id="page-feed">
+
+    <!-- RECADO DO DIA -->
+    <div class="recado-bar">
+      <div class="recado-avatar" id="recadoAvatar">F</div>
+      <input class="recado-input" id="recadoInput" placeholder="deixe um recado para o amor..." maxlength="120"/>
+      <button class="recado-btn" onclick="salvarRecado()">enviar</button>
+    </div>
+    <div class="recado-display" id="recadoDisplay">
+      <p id="recadoTexto"></p>
+    </div>
+
+    <!-- STORIES -->
+    <div class="stories">
+      <div class="story">
+        <div class="story-ring"><div class="story-inner f">F</div></div>
+        <span>Felipe</span>
+      </div>
+      <div class="story">
+        <div class="story-ring"><div class="story-inner b">B</div></div>
+        <span>Bia</span>
+      </div>
+    </div>
+
+    <!-- CONTADOR -->
+    <div class="counter-card">
+      <p class="counter-title">próximo encontro</p>
+      <p class="counter-event" id="eventName">configure a data abaixo 💙</p>
+      <div class="counter-grid">
+        <div class="counter-block"><div class="counter-num" id="cd">--</div><div class="counter-label">dias</div></div>
+        <div class="counter-block"><div class="counter-num" id="ch">--</div><div class="counter-label">horas</div></div>
+        <div class="counter-block"><div class="counter-num" id="cm">--</div><div class="counter-label">min</div></div>
+        <div class="counter-block"><div class="counter-num" id="cs">--</div><div class="counter-label">seg</div></div>
+      </div>
+      <div class="counter-form">
+        <input type="text" id="eventInput" placeholder="nome do encontro"/>
+        <input type="date" id="dateInput" style="color:#fff;"/>
+        <button onclick="setCountdown()">ok</button>
+      </div>
+    </div>
+
+    <!-- FEED POSTS -->
+    <div id="feedPosts"><div class="loading-feed">carregando memórias... 💙</div></div>
+
+  </div>
+
+  <!-- PAGE: TIMELINE -->
+  <div class="page" id="page-timeline">
+    <p class="sec-title">nossa linha do tempo</p>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot">💙</div>
+        <div class="timeline-content">
+          <div class="timeline-date">03 de junho de 2024</div>
+          <div class="timeline-title">O começo de tudo</div>
+          <div class="timeline-desc">O dia em que tudo começou. Uruçuca e Assaré se tornaram a mesma cidade.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">✈️</div>
+        <div class="timeline-content">
+          <div class="timeline-date">Agosto de 2024</div>
+          <div class="timeline-title">A primeira saudade</div>
+          <div class="timeline-desc">Bia precisou ir embora. A distância começou, mas o amor ficou.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">🌊</div>
+        <div class="timeline-content">
+          <div class="timeline-date">Porto de Galinhas</div>
+          <div class="timeline-title">Mar e amor</div>
+          <div class="timeline-desc">O melhor fim de semana. Peixinhos coloridos, mar cristalino e você.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">🌅</div>
+        <div class="timeline-content">
+          <div class="timeline-date">Salvador</div>
+          <div class="timeline-title">Pôr do sol no Elevador Lacerda</div>
+          <div class="timeline-desc">Pelourinho, Bonfim e o pôr do sol mais bonito juntos.</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot">🦋</div>
+        <div class="timeline-content">
+          <div class="timeline-date">12 de junho de 2026</div>
+          <div class="timeline-title">Nosso cantinho</div>
+          <div class="timeline-desc">Criamos esse espaço só nosso. Para guardar cada momento.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: MAPA -->
+  <div class="page" id="page-mapa">
+    <p class="sec-title">mapa das aventuras</p>
+    <div class="map-section">
+      <div class="map-placeholder">
+        <div style="font-size:3rem;margin-bottom:12px;">🗺️</div>
+        <p style="color:#90CAF9;font-size:.9rem;margin-bottom:4px;">cidades que já exploramos juntos</p>
+        <p style="color:#4a7a9a;font-size:.78rem;">7 cidades · Brasil</p>
+      </div>
+      <div class="city-list">
+        <div class="city-tag"><span>📍</span> Uruçuca, BA</div>
+        <div class="city-tag"><span>📍</span> Assaré, CE</div>
+        <div class="city-tag"><span>📍</span> Salvador, BA</div>
+        <div class="city-tag"><span>🏖️</span> Porto de Galinhas, PE</div>
+        <div class="city-tag"><span>📍</span> Santa Maria, RS</div>
+        <div class="city-tag"><span>📍</span> Sorriso, MT</div>
+        <div class="city-tag"><span>📍</span> Inocência, MS</div>
+      </div>
+      <p style="font-size:.75rem;color:#4a7a9a;text-align:center;margin-top:16px;font-style:italic;">e muitas mais por vir 💙</p>
+    </div>
+  </div>
+
+  <!-- PAGE: MURAL DE SONHOS -->
+  <div class="page" id="page-mural">
+    <p class="sec-title">mural de sonhos</p>
+    <div class="mural">
+      <div class="mural-grid" id="muralGrid">
+        <div class="mural-item" onclick="toggleDone(this)">
+          <div class="mural-emoji">🌍</div>
+          <div class="mural-title">Viajar para fora do Brasil</div>
+          <div class="mural-sub">Conhecer o mundo juntos</div>
+          <div class="mural-check">☐ ainda vamos fazer</div>
+        </div>
+        <div class="mural-item" onclick="toggleDone(this)">
+          <div class="mural-emoji">🏠</div>
+          <div class="mural-title">Morar na mesma cidade</div>
+          <div class="mural-sub">Acabar com a saudade de uma vez</div>
+          <div class="mural-check">☐ ainda vamos fazer</div>
+        </div>
+        <div class="mural-item done" onclick="toggleDone(this)">
+          <div class="mural-emoji">🌊</div>
+          <div class="mural-title">Porto de Galinhas</div>
+          <div class="mural-sub">Nadar entre os peixinhos</div>
+          <div class="mural-check" style="color:#4DB6AC;">✓ realizado!</div>
+        </div>
+        <div class="mural-item" onclick="toggleDone(this)">
+          <div class="mural-emoji">🎢</div>
+          <div class="mural-title">Parque de diversões</div>
+          <div class="mural-sub">Gritar juntos nas montanhas russas</div>
+          <div class="mural-check">☐ ainda vamos fazer</div>
+        </div>
+      </div>
+      <button class="add-mural-btn" onclick="openMuralModal()">+ adicionar sonho</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL POSTAR -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <p class="modal-title">o que você quer postar?</p>
+    <div class="modal-opt" onclick="openWrite('memoria')">
+      <div class="modal-icon">✍️</div>
+      <div>
+        <div class="modal-opt-title">Memória</div>
+        <div class="modal-opt-sub">escreva um pensamento ou saudade</div>
+      </div>
+    </div>
+    <div class="modal-opt" onclick="document.getElementById('fileInput').click();closeModal()">
+      <div class="modal-icon">📸</div>
+      <div>
+        <div class="modal-opt-title">Foto</div>
+        <div class="modal-opt-sub">escolha da galeria ou tire agora</div>
+      </div>
+    </div>
+    <button class="modal-cancel" onclick="closeModal()">cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL ESCREVER MEMÓRIA -->
+<div class="write-modal" id="writeModal">
+  <div class="write-inner">
+    <h3 id="writeTitle">nova memória</h3>
+    <div class="author-row">
+      <button class="author-chip active" id="chip-f" onclick="setAuthor('Felipe')">Felipe 💙</button>
+      <button class="author-chip" id="chip-b" onclick="setAuthor('Bia')">Bia 💙</button>
+    </div>
+    <textarea id="memText" placeholder="escreva aqui sua memória, pensamento ou saudade..."></textarea>
+    <button class="write-send" onclick="postMemoria()">publicar 💙</button>
+    <button class="write-cancel" onclick="closeWrite()">cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL MURAL -->
+<div class="write-modal" id="muralModal">
+  <div class="write-inner">
+    <h3>novo sonho</h3>
+    <input type="text" id="muralEmoji" placeholder="emoji (ex: 🌍)"/>
+    <input type="text" id="muralTitulo" placeholder="título do sonho"/>
+    <input type="text" id="muralDesc" placeholder="descrição"/>
+    <button class="write-send" onclick="addMural()">adicionar 💙</button>
+    <button class="write-cancel" onclick="closeMuralModal()">cancelar</button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#0D47A1;border-top:1px solid #1976D2;padding:8px 8px;display:flex;justify-content:space-around;align-items:center;z-index:10;" id="bottomNav">
+  <button class="nav-btn active" onclick="showPage('feed',this);setNavActive(this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    feed
+  </button>
+  <button class="nav-btn" onclick="showPage('timeline',this);setNavActive(this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    história
+  </button>
+  <button class="nav-plus" onclick="openModal()">
+    <svg width="26" height="26" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+  <button class="nav-btn" onclick="showPage('mapa',this);setNavActive(this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+    mapa
+  </button>
+  <button class="nav-btn" onclick="showPage('mural',this);setNavActive(this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    sonhos
+  </button>
+</nav>
+
+<input type="file" id="fileInput" accept="image/*" multiple onchange="uploadFoto(this.files)"/>
+
+<script>
+const SUPABASE_URL = 'https://xzufrnfqbarhovxvgzvz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_b1YWliC-TaINxVFVjLHgVQ_IwdIq4-N';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const SENHA = '270424';
+let autor = 'Felipe';
+let countdownTarget = null;
+let countdownInterval = null;
+
+// ANIVERSÁRIOS
+const ANIVERSARIOS = [
+  { dia: 31, mes: 8, nome: 'Bia', msg: 'Hoje é o aniversário da sua pessoa favorita! Feliz aniversário, Bia! Que esse dia seja tão especial quanto você. Com todo amor do Felipe 💙', emoji: '🎂' },
+  { dia: 14, mes: 1, nome: 'Felipe', msg: 'Hoje é o aniversário do seu amor! Feliz aniversário, Felipe! Com todo carinho da Bia 💙', emoji: '🎉' },
+];
+
+document.getElementById('pw').addEventListener('keydown', e => { if(e.key==='Enter') unlock(); });
+
+function unlock() {
+  if(document.getElementById('pw').value === SENHA) {
+    document.getElementById('lock').style.display = 'none';
+    verificarAniversario();
+    init();
+  } else {
+    document.getElementById('err').textContent = 'senha incorreta 💔';
+    document.getElementById('pw').value = '';
+  }
+}
+
+function verificarAniversario() {
+  const hoje = new Date();
+  const aniv = ANIVERSARIOS.find(a => a.dia === hoje.getDate() && a.mes === (hoje.getMonth()+1));
+  if(aniv) {
+    document.getElementById('surpresaEmoji').textContent = aniv.emoji;
+    document.getElementById('surpresaTitulo').textContent = 'Feliz Aniversário, ' + aniv.nome + '! 🎉';
+    document.getElementById('surpresaTexto').textContent = aniv.msg;
+    document.getElementById('surpresa').classList.add('show');
+    makeConfetti();
+  } else {
+    document.getElementById('app').style.display = 'flex';
+  }
+}
+
+function fecharSurpresa() {
+  document.getElementById('surpresa').classList.remove('show');
+  document.getElementById('app').style.display = 'flex';
+}
+
+function makeConfetti() {
+  const emojis = ['🎂','🎉','💙','🦋','⭐','🎈'];
+  const c = document.getElementById('confetti');
+  for(let i=0;i<20;i++) {
+    const s = document.createElement('span');
+    s.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    s.style.left = Math.random()*100+'%';
+    s.style.animationDuration = (3+Math.random()*4)+'s';
+    s.style.animationDelay = (Math.random()*3)+'s';
+    c.appendChild(s);
+  }
+}
+
+async function init() {
+  loadCountdown();
+  loadRecado();
+  loadPosts();
+}
+
+// PERFIL
+function trocarPerfil() {
+  autor = autor === 'Felipe' ? 'Bia' : 'Felipe';
+  const av = document.getElementById('curAvatar');
+  const ra = document.getElementById('recadoAvatar');
+  if(autor === 'Felipe') {
+    av.textContent = 'F'; av.style.color = '#90CAF9'; av.style.borderColor = '#42A5F5';
+    ra.textContent = 'F'; ra.style.color = '#90CAF9';
+  } else {
+    av.textContent = 'B'; av.style.color = '#4DB6AC'; av.style.borderColor = '#4DB6AC';
+    ra.textContent = 'B'; ra.style.color = '#4DB6AC';
+  }
+  document.getElementById('chip-f').classList.toggle('active', autor==='Felipe');
+  document.getElementById('chip-b').classList.toggle('active', autor==='Bia');
+}
+
+// PÁGINAS
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el && el.classList.contains('tab')) el.classList.add('active');
+}
+
+function setNavActive(btn) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// RECADO DO DIA
+async function salvarRecado() {
+  const txt = document.getElementById('recadoInput').value.trim();
+  if(!txt) return;
+  await sb.from('Memórias').insert([{ autor: autor + '_recado', texto: txt }]);
+  mostrarRecado(autor, txt);
+  document.getElementById('recadoInput').value = '';
+}
+
+async function loadRecado() {
+  const { data } = await sb.from('Memórias').select('*').like('autor','%_recado').order('created_at',{ascending:false}).limit(1);
+  if(data && data.length) {
+    const nomeAutor = data[0].autor.replace('_recado','');
+    mostrarRecado(nomeAutor, data[0].texto);
+  }
+}
+
+function mostrarRecado(nome, txt) {
+  const d = document.getElementById('recadoDisplay');
+  document.getElementById('recadoTexto').textContent = nome + ' diz: "' + txt + '"';
+  d.style.display = 'block';
+}
+
+// CONTADOR
+function setCountdown() {
+  const name = document.getElementById('eventInput').value.trim();
+  const date = document.getElementById('dateInput').value;
+  if(!name || !date) return;
+  countdownTarget = new Date(date+'T00:00:00');
+  document.getElementById('eventName').textContent = name + ' 💙';
+  localStorage.setItem('countdown', JSON.stringify({ name, date }));
+  startCountdown();
+}
+
+function loadCountdown() {
+  const saved = localStorage.getItem('countdown');
+  if(saved) {
+    const { name, date } = JSON.parse(saved);
+    countdownTarget = new Date(date+'T00:00:00');
+    document.getElementById('eventName').textContent = name + ' 💙';
+    document.getElementById('eventInput').value = name;
+    document.getElementById('dateInput').value = date;
+    startCountdown();
+  }
+}
+
+function startCountdown() {
+  if(countdownInterval) clearInterval(countdownInterval);
+  countdownInterval = setInterval(tick, 1000);
+  tick();
+}
+
+function tick() {
+  if(!countdownTarget) return;
+  const diff = countdownTarget - new Date();
+  if(diff <= 0) {
+    ['cd','ch','cm','cs'].forEach(id => document.getElementById(id).textContent = '0');
+    return;
+  }
+  document.getElementById('cd').textContent = Math.floor(diff/86400000);
+  document.getElementById('ch').textContent = String(Math.floor((diff%86400000)/3600000)).padStart(2,'0');
+  document.getElementById('cm').textContent = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+  document.getElementById('cs').textContent = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+}
+
+// POSTS
+async function loadPosts() {
+  const container = document.getElementById('feedPosts');
+  const { data } = await sb.from('Memórias').select('*').not('autor','like','%_recado').order('created_at',{ascending:false});
+  
+  const fixos = [
+    { id:null, autor:'Felipe', texto:'O dia em que tudo começou. Uruçuca e Assaré se tornaram a mesma cidade pra mim 💙', created_at:'2024-06-03', tipo:'texto' },
+  ];
+  
+  container.innerHTML = '';
+  [...(data||[]), ...fixos].forEach(p => renderPost(p));
+}
+
+function renderPost(p) {
+  const container = document.getElementById('feedPosts');
+  const cls = p.autor === 'Felipe' || p.autor.startsWith('F') ? 'f' : 'b';
+  const nomeExib = p.autor.includes('_') ? p.autor.split('_')[0] : p.autor;
+  const date = new Date(p.created_at).toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+  const div = document.createElement('div');
+  div.className = 'post';
+  
+  let conteudo = '';
+  if(p.foto_url) {
+    conteudo = `<div class="post-img"><img src="${p.foto_url}" alt="foto"/></div>`;
+  } else {
+    conteudo = `<div class="post-text-card"><p>"${p.texto}"</p></div>`;
+  }
+
+  const delBtn = p.id ? `<button class="del-post" onclick="delPost(this,${p.id})">✕ apagar</button>` : '';
+  
+  div.innerHTML = `
+    <div class="post-header">
+      <div class="post-user">
+        <div class="post-avatar ${cls}">${nomeExib[0]}</div>
+        <div><div class="post-name">${nomeExib}</div><div class="post-time">${date}</div></div>
+      </div>
+      ${delBtn}
+    </div>
+    ${conteudo}
+    <div class="post-actions">
+      <div class="actions-row">
+        <button class="action-btn" onclick="toggleHeart(this)"><span>🤍</span><span> 0</span></button>
+      </div>
+      ${p.foto_url && p.texto ? `<p class="post-caption"><strong>${nomeExib}</strong> ${p.texto}</p>` : ''}
+    </div>`;
+  container.appendChild(div);
+}
+
+function toggleHeart(btn) {
+  const s = btn.querySelector('span');
+  const c = btn.querySelectorAll('span')[1];
+  const liked = s.textContent === '💙';
+  s.textContent = liked ? '🤍' : '💙';
+  c.textContent = liked ? ' 0' : ' 1';
+}
+
+async function delPost(btn, id) {
+  if(!confirm('Apagar este post?')) return;
+  await sb.from('Memórias').delete().eq('id', id);
+  btn.closest('.post').remove();
+}
+
+// MODAIS
+function openModal() { document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function openWrite(t) { closeModal(); document.getElementById('writeModal').classList.add('open'); }
+function closeWrite() { document.getElementById('writeModal').classList.remove('open'); }
+function openMuralModal() { document.getElementById('muralModal').classList.add('open'); }
+function closeMuralModal() { document.getElementById('muralModal').classList.remove('open'); }
+
+function setAuthor(a) {
+  autor = a;
+  document.getElementById('chip-f').classList.toggle('active', a==='Felipe');
+  document.getElementById('chip-b').classList.toggle('active', a==='Bia');
+}
+
+async function postMemoria() {
+  const txt = document.getElementById('memText').value.trim();
+  if(!txt) return;
+  const { data } = await sb.from('Memórias').insert([{ autor, texto: txt }]).select();
+  if(data) {
+    const container = document.getElementById('feedPosts');
+    const div = document.createElement('div');
+    div.className = 'post';
+    const cls = autor === 'Felipe' ? 'f' : 'b';
+    div.innerHTML = `
+      <div class="post-header">
+        <div class="post-user">
+          <div class="post-avatar ${cls}">${autor[0]}</div>
+          <div><div class="post-name">${autor}</div><div class="post-time">agora</div></div>
+        </div>
+        <button class="del-post" onclick="delPost(this,${data[0].id})">✕ apagar</button>
+      </div>
+      <div class="post-text-card"><p>"${txt}"</p></div>
+      <div class="post-actions"><div class="actions-row"><button class="action-btn" onclick="toggleHeart(this)"><span>🤍</span><span> 0</span></button></div></div>`;
+    container.insertBefore(div, container.firstChild);
+    document.getElementById('memText').value = '';
+    closeWrite();
+  }
+}
+
+async function uploadFoto(files) {
+  for(const file of files) {
+    const name = Date.now()+'_'+file.name.replace(/\s/g,'_');
+    const { error } = await sb.storage.from('Fotos').upload(name, file);
+    if(!error) {
+      const { data: urlData } = sb.storage.from('Fotos').getPublicUrl(name);
+      const { data } = await sb.from('Memórias').insert([{ autor, foto_url: urlData.publicUrl, texto: '' }]).select();
+      if(data) renderPost(data[0]);
+    }
+  }
+}
+
+// MURAL
+function toggleDone(el) {
+  el.classList.toggle('done');
+  const check = el.querySelector('.mural-check');
+  check.textContent = el.classList.contains('done') ? '✓ realizado!' : '☐ ainda vamos fazer';
+  check.style.color = el.classList.contains('done') ? '#4DB6AC' : '';
+}
+
+function addMural() {
+  const emoji = document.getElementById('muralEmoji').value || '⭐';
+  const titulo = document.getElementById('muralTitulo').value.trim();
+  const desc = document.getElementById('muralDesc').value.trim();
+  if(!titulo) return;
+  const grid = document.getElementById('muralGrid');
+  const div = document.createElement('div');
+  div.className = 'mural-item';
+  div.onclick = () => toggleDone(div);
+  div.innerHTML = `<div class="mural-emoji">${emoji}</div><div class="mural-title">${titulo}</div><div class="mural-sub">${desc}</div><div class="mural-check">☐ ainda vamos fazer</div>`;
+  grid.appendChild(div);
+  ['muralEmoji','muralTitulo','muralDesc'].forEach(id => document.getElementById(id).value = '');
+  closeMuralModal();
+}
+</script>
+</body>
+</html>
